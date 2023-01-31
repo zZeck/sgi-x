@@ -1,10 +1,19 @@
 # SGI Extractor
 
-Extracts from an `*.sw` and `*.idb` set of files. Very dumb program.
+This is a fork of https://github.com/sgi-demos/sgix.
+
+Extracts from an `*.sw` and `*.idb` set of files.
+
+Multiple versions of sgix will be in this tree, one for each major IRIX release (3, 4, 5, 6).  
+
+Expect hiccups, this is only complete in terms of getting it to work sufficiently to extract SGI demo source.
 
 ## Building
 
 ```
+https://hexfiend.com/ is helpful for debugging (matching up .idb file info to .sw file reality).
+
+brew install go
 $ go get
 $ go build
 ```
@@ -35,3 +44,4 @@ Licensed under the MIT license. See `LICENSE.txt`.
 ## See Also
 
 http://persephone.cps.unizar.es/~spd/src/other/mydb.c
+https://github.com/sgi-demos/sgix
