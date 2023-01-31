@@ -40,13 +40,25 @@ func extractFile(e entry, src *os.File, dest string) error {
 	if err != nil {
 		return err
 	}
+
 	if e.cmpsize > 0 {
+		fmt.Println("uncompress ", e.path)
 		exe := exec.Command("uncompress")
 		exe.Stdin = &io.LimitedReader{R: src, N: int64(e.cmpsize)}
 		exe.Stdout = fp
 		exe.Stderr = os.Stderr
 		return exe.Run()
 	}
+
+	if e.path[len(e.path)-2:] == ".z" {
+		fmt.Println("gzip -d ", e.path)
+		exe := exec.Command("gzip", "-d")
+		exe.Stdin = &io.LimitedReader{R: src, N: int64(e.size)}
+		exe.Stdout = fp
+		exe.Stderr = os.Stderr
+		return exe.Run()
+	}
+
 	_, err = io.CopyN(fp, src, int64(e.size))
 	return err
 }

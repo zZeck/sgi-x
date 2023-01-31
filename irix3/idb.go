@@ -63,7 +63,7 @@ func getFieldP(line []byte) (x, p, rest []byte, err error) {
 	return x, p, rest, nil
 }
 
-func parseEntry(line []byte, curoff *uint64) (e entry, err error) {
+func parseEntry(line []byte, sw_curoff *uint64, man_curoff *uint64) (e entry, err error) {
 	//fmt.Println("parse line=", line)
 
 	var f []byte
@@ -130,16 +130,26 @@ func parseEntry(line []byte, curoff *uint64) (e entry, err error) {
 		}
 	}
 	if e.ty == 'f' {
-		e.offset = *curoff
-		fmt.Println("            offset start=", *curoff)
-		*curoff += uint64(len(e.path)) + 2 // MAGIC: was 2
-		fmt.Println("                   + path+2=", e.path, *curoff)
+		// maintain separate running offsets for .sw and .man files
+		pathLen := len(e.path)
+		entry_curoff := sw_curoff
+		fmt.Println("            .sw  offset=", *entry_curoff)
+		fmt.Println("            .man offset=", *man_curoff)
+		if e.path[pathLen-2:] == ".z" {
+			entry_curoff = man_curoff
+			fmt.Println("            using .man offset")
+		}
+
+		e.offset = *entry_curoff
+		fmt.Println("            offset start=", *entry_curoff)
+		*entry_curoff += uint64(pathLen) + 2
+		fmt.Println("                   + path+2=", e.path, *entry_curoff)
 		if e.cmpsize > 0 {
-			*curoff += e.cmpsize
-			fmt.Println("                   + cmpsize=", e.cmpsize, *curoff)
+			*entry_curoff += e.cmpsize
+			fmt.Println("                   + cmpsize=", e.cmpsize, *entry_curoff)
 		} else {
-			*curoff += e.size
-			fmt.Println("                   + size=", e.size, *curoff)
+			*entry_curoff += e.size
+			fmt.Println("                   + size=", e.size, *entry_curoff)
 		}
 	}
 	return e, nil
@@ -152,12 +162,13 @@ func readIDB(name string) ([]entry, error) {
 	}
 	defer fp.Close()
 	sc := bufio.NewScanner(fp)
-	var curoff uint64 = 2 // MAGIC: was 13
+	var sw_curoff uint64 = 2 // MAGIC: was 13
+	var man_curoff uint64 = 2 // MAGIC: was 13
 	var r []entry
 	for lineno := 1; sc.Scan(); lineno++ {
 		line := sc.Bytes()
 		if line[0] != 0 {
-			e, err := parseEntry(line, &curoff)
+			e, err := parseEntry(line, &sw_curoff, &man_curoff)
 			if err != nil {
 				return nil, fmt.Errorf("%s:%d: %v", name, lineno, err)
 			}

@@ -21,35 +21,37 @@ func isSafePath(name string) bool {
 }
 
 func extractFile(e entry, src *os.File, dest string) error {
+
+	fmt.Println("extractFile ", dest)
+
 	if _, err := os.Stat(dest); !os.IsNotExist(err) {
+		fmt.Println("already exists ", dest)
 		return nil
 	}
 
-	fmt.Println("extractFile ", dest)
 	if _, err := src.Seek(int64(e.offset), io.SeekStart); err != nil {
 		return err
 	}
+
 	buf := make([]byte, len(e.path)+0) // MAGIC: was 2
 	if _, err := src.Read(buf); err != nil {
 		return nil
 	}
-	//buf[len(e.path)] = 0
+
 	fmt.Println("   seeked to ", e.offset, " and found ", string(buf), " required= ", e.path)
 	if string(buf) != e.path {
 		return errors.New("seek failure")
 	}
-	//expect := make([]byte, len(e.path)+1) // MAGIC: was 2
-	//copy(expect, buf) // da fuq?
-	//if !bytes.Equal(buf, expect) {
-	//	return errors.New("out of sync with file")
-	//}
+
 	if dest == "" {
 		return nil
 	}
+
 	fp, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
+	
 	if e.cmpsize > 0 {
 		fmt.Println("    uncompress ", dest)
 		exe := exec.Command("uncompress")
@@ -58,6 +60,16 @@ func extractFile(e entry, src *os.File, dest string) error {
 		exe.Stderr = os.Stderr
 		return exe.Run()
 	}
+
+	// if e.path[len(e.path)-2:] == ".z" {
+	// 	fmt.Println("gzip -d ", e.path)
+	// 	exe := exec.Command("gzip", "-d")
+	// 	exe.Stdin = &io.LimitedReader{R: src, N: int64(e.size)}
+	// 	exe.Stdout = fp
+	// 	exe.Stderr = os.Stderr
+	// 	return exe.Run()
+	// }
+
 	_, err = io.CopyN(fp, src, int64(e.size))
 	if err != nil {
 		return err
@@ -88,7 +100,19 @@ func extractLink(e entry, dest string) error {
 	// return os.Symlink(e.symval, dest)
 }
 
-func extractEntry(e entry, src *os.File, dest string) error {
+func extractEntry(e entry, src *os.File, dest string, isManFile bool) error {
+
+	// skip man files for now
+	pathLen := len(e.path)
+	if e.ty == 'f' {
+		if (e.path[pathLen-2:] == ".z" && !isManFile) || (e.path[pathLen-2:] != ".z" && isManFile) {
+			fmt.Println("skip ", e.path)
+			return nil
+		} else {
+			fmt.Println("extract ", e.path)
+		}
+	}
+
 
 	name := path.Clean(e.path)
 	if !isSafePath(name) {
@@ -112,15 +136,23 @@ func extractEntry(e entry, src *os.File, dest string) error {
 	}
 }
 
-func extract(entries []entry, src, dest string) error {
-	fp, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
-	for _, e := range entries {
-		if err := extractEntry(e, fp, dest); err != nil {
-			return fmt.Errorf("%s: %v", e.path, err)
+func extract(entries []entry, swFile, manFile, outDir string) error {
+	var fps = [...]*os.File{nil, nil}
+	var files = [...]string{swFile, manFile}
+
+	for i := 0; i < 2; i++ {
+		fp, err := os.Open(files[i])
+		if err != nil {
+			return err
+		}
+		fps[i] = fp
+		defer fps[i].Close()
+		isManFile := (files[i] == manFile)
+
+		for _, e := range entries {
+			if err := extractEntry(e, fps[i], outDir, isManFile); err != nil {
+				return fmt.Errorf("%s: %v", e.path, err)
+			}
 		}
 	}
 	return nil

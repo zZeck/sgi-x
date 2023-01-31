@@ -2,45 +2,58 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
-
+	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
 func mainE() error {
 	args := os.Args
-	if len(args) < 2 || len(args) > 4 {
-		return errors.New("usage: sgix <file.idb> [<data> [<dir>]]")
+	if len(args) < 2 || len(args) > 5 {
+		return errors.New("usage: sgix <file.idb> [<file.sw> [<file.man>] [<output dir>]]")
 	}
-	idbfile := args[1]
-	ents, err := readIDB(idbfile)
+
+	var idbFile string
+	var swFile string
+	var manFile string
+	var outDir string
+
+	for argNum := 1; argNum < len(args); argNum++ {
+		arg := args[argNum]
+		argLen := len(args[argNum])
+		if arg[argLen-4:] == ".idb" {
+			idbFile = args[argNum]
+		} else if arg[argLen-3:] == ".sw" {
+			swFile = args[argNum]
+		} else if arg[argLen-4:] == ".man" {
+			manFile = args[argNum]
+		} else {
+			outDir = args[argNum]
+		}
+	}
+
+	fmt.Println("INFO: idb = ", idbFile, "\nsw = ", swFile, "\nman = ", manFile, "\noutput = ", outDir)
+	//os.Exit(1)
+
+	if idbFile == "" {
+		return errors.New("Missing .idb file")
+	}
+
+	ents, err := readIDB(idbFile)
 	if err != nil {
 		return err
 	}
-	if len(args) < 3 {
-		return nil
+
+	if outDir == "" {
+		outDir = "./out"
 	}
 
-	//return nil
-	
-	datafile := args[2]
-	var dest string
-	if len(args) >= 4 {
-		dest = args[3]
-		if dest == "" {
-			return errors.New("invalid destination directory")
-		}
-		fmt.Println("Extracting...")
-	} else {
-		fmt.Println("Verifying...")
-	}
-	return extract(ents, datafile, dest)
+	return extract(ents, swFile, manFile, outDir)
 }
 
 func main() {
 	if err := mainE(); err != nil {
-		logrus.Errorln("Error:", err)
+		logrus.Errorln("ERROR:", err)
 		os.Exit(1)
 	}
 }
