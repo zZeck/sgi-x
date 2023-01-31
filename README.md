@@ -10,9 +10,9 @@ Expect hiccups, this will only be finished enough to extract SGI demo source and
 
 ## Building
 
-```
-https://hexfiend.com/ is helpful for debugging (matching up .idb file info to .sw and .man file reality).
+A hex editor (like https://hexfiend.com/) is useful for debugging (getting the info from the .idb to match the reality of the .sw and .man files).
 
+```
 $ brew install go
 $ go get
 $ go build
