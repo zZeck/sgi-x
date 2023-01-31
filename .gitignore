@@ -1,1 +1,6 @@
-/sgix
+bin
+.DS_Store
+Thumbs.db
+*.dSYM
+.vscode
+demo_bin
