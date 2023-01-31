@@ -1,19 +1,19 @@
 # SGI Extractor
 
-This is a fork of https://github.com/sgi-demos/sgix.
+This is a fork of https://github.com/depp/sgix.
 
-Extracts from an `*.sw` and `*.idb` set of files.
+Extracts from a `*.sw`, `*.idb`, and `.man` set of SGI install files.
 
 Multiple versions of sgix will be in this tree, one for each major IRIX release (3, 4, 5, 6).  
 
-Expect hiccups, this is only complete in terms of getting it to work sufficiently to extract SGI demo source.
+Expect hiccups, this will only be finished enough to extract SGI demo source and man pages.
 
 ## Building
 
 ```
-https://hexfiend.com/ is helpful for debugging (matching up .idb file info to .sw file reality).
+https://hexfiend.com/ is helpful for debugging (matching up .idb file info to .sw and .man file reality).
 
-brew install go
+$ brew install go
 $ go get
 $ go build
 ```
