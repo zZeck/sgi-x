@@ -2,11 +2,11 @@
 
 This is a fork of https://github.com/depp/sgix.
 
-Extracts from a `*.sw`, `*.idb`, and `.man` set of SGI install files.
+Extracts from `*.sw`, `*.idb`, etc. sets of SGI install files. 
 
-Multiple versions of sgix will be in this tree, one for each major IRIX release (3, 4, 5, 6).  
+This fork aims to expand handling of install files to all major IRIX releases (3, 4, 5, 6).  
 
-Expect hiccups, this will only be finished enough to extract SGI demo source and man pages.
+The goal is to be able to extract SGI demo source and man pages, so it has only been tested on install files containing those things.
 
 ## Building
 
@@ -24,15 +24,14 @@ Let's say you have a `*.sw` and `*.idb` file. It's an extracted "tardist" file f
 
 ```
 $ ls
-Example
-Example.idb
-Example.sw
+dev.idb
+dev.sw
 ```
 
 To extract, just run `sgix` and specify the destination:
 
 ```
-$ sgix Example.idb Example.sw out
+$ sgix dev.idb dev.sw out
 ```
 
 This will create a folder called `out` with the extracted contents.
@@ -44,4 +43,4 @@ Licensed under the MIT license. See `LICENSE.txt`.
 ## See Also
 
 http://persephone.cps.unizar.es/~spd/src/other/mydb.c
-https://github.com/sgi-demos/sgix
+https://github.com/depp/sgix
