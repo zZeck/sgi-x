@@ -1,7 +1,12 @@
 module code.invalid/sgix
 
+go 1.23
+
+require github.com/sirupsen/logrus v1.7.0
+
 require (
-	github.com/sirupsen/logrus v1.7.0
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect

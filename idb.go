@@ -33,34 +33,64 @@ func getField(line []byte) (x, rest []byte) {
 	return
 }
 
-func getFieldP(line []byte) (x, p, rest []byte, err error) {
-	i := bytes.IndexByte(line, ' ')
-	if i == -1 {
-		x = line
+//x is the command
+//p is the parameter
+//rest is the rest of the line, after the next space seperator
+//err is error
+func getFieldP(line []byte) (cmd, param, rest []byte, err error) {
+	nextSpace := bytes.IndexByte(line, ' ')
+	var temp []byte = nil
+	fieldEnd := nextSpace
+	if nextSpace == -1 {
+		temp = line
+		fieldEnd = len(line)
 	} else {
-		x = line[:i]
-		rest = line[i+1:]
+		temp = line[:nextSpace]
 	}
-	i = bytes.IndexByte(x, '(')
-	if i == -1 {
-		return x, p, rest, nil
+	cmdEnd := bytes.IndexByte(temp, '(')
+	if cmdEnd == -1 {
+		if nextSpace == -1 {
+			return cmd, param, line[len(line):], nil
+		}
+		return cmd, param, line[nextSpace+1:], nil //empty
 	}
-	x = line[:i]
-	rest = line[i+1:]
-	i = bytes.IndexByte(rest, ')')
-	if i == -1 {
-		return nil, nil, nil, errors.New("missing ')'")
+	//there can be () and spaces withing " quoted strings
+	quoteindex := bytes.IndexByte(line, '"')
+	if quoteindex != -1 && quoteindex < nextSpace {
+		fieldEnd = quoteindex
+		inQuoteString := true
+		for inQuoteString {
+			fieldEnd += bytes.IndexByte(line[fieldEnd+1:], '"') + 1
+			//must deal with \" within quoted string
+			if line[fieldEnd - 1] != '\\' {
+				inQuoteString = false
+			}
+		}
+		i := bytes.IndexByte(line[fieldEnd:], ' ') //could be at end of line
+		if i == -1 {
+			fieldEnd = len(line)
+		} else {
+			fieldEnd += i
+		}
 	}
-	p = rest[:i]
-	rest = rest[i+1:]
-	switch {
-	case len(rest) == 0:
-	case rest[0] == ' ':
-		rest = rest[1:]
-	default:
-		return nil, nil, nil, errors.New("no space after ')'")
+
+	field := line[:fieldEnd]
+	if (fieldEnd == len(line)) {
+		rest = line[fieldEnd:]
+	} else {
+		rest = line[fieldEnd+1:]
 	}
-	return x, p, rest, nil
+	 //rest is after this field
+
+	cmd = field[:cmdEnd]
+
+	paramEnd := bytes.LastIndex(field, []byte(")"))
+	if paramEnd == -1 {
+		return nil, nil, nil, errors.New("missing ')'") //can't find closing ) for params
+	}
+	param = field[cmdEnd+1:paramEnd]
+
+	return cmd, param, rest, nil
 }
 
 func parseEntry(line []byte, curoff *uint64) (e entry, err error) {

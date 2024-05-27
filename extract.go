@@ -71,6 +71,7 @@ func extractDirectory(e entry, dest string) error {
 }
 
 func extractLink(e entry, dest string) error {
+	return nil
 	if dest == "" {
 		return nil
 	}

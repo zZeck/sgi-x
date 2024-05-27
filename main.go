@@ -8,6 +8,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//func main() {
+//	temp := []byte("")
+//	getFieldP(temp)
+//}
+
 func mainE() error {
 	args := os.Args
 	if len(args) < 2 || len(args) > 4 {
