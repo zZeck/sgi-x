@@ -4,10 +4,11 @@ Thumbs.db
 *.dSYM
 .vscode
 demo_bin
-/irix3
-/irix4
 /TEST
 /sgix
 /sgix.exe
 *.o
 *.exe
+/archives
+/extract
+log

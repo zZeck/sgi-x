@@ -44,3 +44,11 @@ Licensed under the MIT license. See `LICENSE.txt`.
 
 http://persephone.cps.unizar.es/~spd/src/other/mydb.c
 https://github.com/depp/sgix
+
+
+
+
+------------
+Requires:
+Go
+uncompress

@@ -1,6 +1,6 @@
 module code.invalid/sgix
 
-go 1.23
+go 1.22.3
 
 require github.com/sirupsen/logrus v1.7.0
 
