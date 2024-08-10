@@ -3,15 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
-
-	"github.com/sirupsen/logrus"
+	"os/exec"
+	"bufio"
+	"path"
+	"path/filepath"
 )
-
-//func main() {
-//	temp := []byte("")
-//	getFieldP(temp)
-//}
 
 func mainE() error {
 	args := os.Args
@@ -19,30 +17,75 @@ func mainE() error {
 		return errors.New("usage: sgix <file.idb> [<data> [<dir>]]")
 	}
 	idbfile := args[1]
-	ents, err := readIDB(idbfile)
-	if err != nil {
-		return err
-	}
-	if len(args) < 3 {
-		return nil
-	}
 	datafile := args[2]
-	var dest string
-	if len(args) >= 4 {
-		dest = args[3]
-		if dest == "" {
-			return errors.New("invalid destination directory")
-		}
-		fmt.Println("Extracting...")
-	} else {
-		fmt.Println("Verifying...")
+	dest := args[3]
+
+	idb_file, _ := os.Open(idbfile)
+	defer idb_file.Close()
+
+	sc := bufio.NewScanner(idb_file)
+	lines := make([]string, 0)
+
+	// Read through 'tokens' until an EOF is encountered.
+	for sc.Scan() {
+	    lines = append(lines, sc.Text())
 	}
-	return extract(ents, datafile, dest)
+
+	entries := make([]entry2, 0)
+	offset := 13
+	for _, line := range lines {
+        entry := idb_line_entry(line, offset)
+		entries = append(entries, entry)
+		offset = entry.offset
+    }
+
+	data_file, _ := os.Open(datafile)
+	defer idb_file.Close()
+	for _, entry := range entries {
+        output_entry(entry, data_file, dest)
+    }
+
+	return nil
 }
 
 func main() {
 	if err := mainE(); err != nil {
-		logrus.Errorln("Error:", err)
 		os.Exit(1)
 	}
+}
+
+func output_entry(entry entry2, src *os.File, out_dir string) error {
+	name := path.Clean(entry.path)
+	dest := path.Join(out_dir, name)
+
+	switch entry.idb_entry_type {
+	case "f":
+		os.MkdirAll(filepath.Dir(dest), 0770);
+		fp, err := os.Create(dest)
+		if err != nil {
+			return err
+		}
+	
+		if entry.compressed {
+			fmt.Println("uncompress ", entry.path)
+			exe := exec.Command("uncompress")
+			exe.Stdin = &io.LimitedReader{R: src, N: int64(entry.size_in_archive)}
+			exe.Stdout = fp
+			exe.Stderr = os.Stderr
+			return exe.Run()
+		}
+	
+		_, err = io.CopyN(fp, src, int64(entry.final_size))
+		return err
+	case "d":
+		if dest == "" {
+			return nil
+		}
+		return os.Mkdir(dest, 0777)
+	case "l":
+		//symlink
+	default:
+	}
+
+	return fmt.Errorf("unknown type")
 }
