@@ -1,8 +1,8 @@
 package main
 
 import (
-	"strings"
 	"strconv"
+	"strings"
 )
 
 //Could try using a csv parsing library
@@ -11,7 +11,7 @@ import (
 //Because of how quotes appear within a field.
 //LazyQuotes does not do what is needed
 
-//won't handle escaped quotes correctly within a quoted string
+// won't handle escaped quotes correctly within a quoted string
 func idb_line_fields(line string) []string {
 	quoted := false
 	a := strings.FieldsFunc(line, func(r rune) bool {
@@ -23,7 +23,7 @@ func idb_line_fields(line string) []string {
 	return a
 }
 
-//won't handle escaped quotes correctly within a quoted string
+// won't handle escaped quotes correctly within a quoted string
 func idb_field_key_value(field string) (string, string) {
 	paren_index := strings.IndexByte(field, '(')
 	if paren_index == -1 {
@@ -42,16 +42,16 @@ func idb_field_key_value(field string) (string, string) {
 	return key, strings.Trim(a[1], "\"")
 }
 
-func idb_line_entry(line string, offset int) entry2 {
+func idb_line_entry(line string, entry_offset int) entry2 {
 	blah := idb_line_fields(line)
 
 	m := make(map[string]string)
-    for _, field := range blah {
-        key, value := idb_field_key_value(field)
+	for _, field := range blah {
+		key, value := idb_field_key_value(field)
 		if key != "" {
 			m[key] = value
 		}
-    }
+	}
 
 	size_in_archive := 0
 	compressed := false
@@ -78,23 +78,30 @@ func idb_line_entry(line string, offset int) entry2 {
 		symval = val
 	}
 
-	return entry2 {
-    	idb_entry_type: blah[0],
-    	path: blah[4],
+	data_offset := entry_offset
+	//directory entries will have no size
+	//do not want to accidentally incrment offset by their path
+	if final_size > 0 {
+		data_offset = entry_offset + 2 + len(blah[4]) //end of last file, + 2 bytes of unknown, + path
+	}
+
+	return entry2{
+		idb_entry_type:  blah[0],
+		path:            blah[4],
 		size_in_archive: size_in_archive,
-		final_size: final_size,
-		symval: symval,
-		compressed: compressed,
-		offset: offset + size_in_archive,
-    }
+		final_size:      final_size,
+		symval:          symval,
+		compressed:      compressed,
+		data_offset:     data_offset,
+	}
 }
 
 type entry2 struct {
-	idb_entry_type      string
-	path    string
-	size_in_archive    int
-	final_size    int
-	symval  string
-	compressed bool
-	offset int
+	idb_entry_type  string
+	path            string
+	size_in_archive int
+	final_size      int
+	symval          string
+	compressed      bool
+	data_offset     int
 }

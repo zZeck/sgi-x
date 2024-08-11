@@ -1,12 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"bufio"
 	"path"
 	"path/filepath"
 )
@@ -28,22 +28,23 @@ func mainE() error {
 
 	// Read through 'tokens' until an EOF is encountered.
 	for sc.Scan() {
-	    lines = append(lines, sc.Text())
+		lines = append(lines, sc.Text())
 	}
 
 	entries := make([]entry2, 0)
-	offset := 13
+	//im001V530P00 + nul term
+	entry_offset := 13
 	for _, line := range lines {
-        entry := idb_line_entry(line, offset)
+		entry := idb_line_entry(line, entry_offset)
 		entries = append(entries, entry)
-		offset = entry.offset
-    }
+		entry_offset = entry.data_offset + entry.size_in_archive
+	}
 
 	data_file, _ := os.Open(datafile)
 	defer idb_file.Close()
 	for _, entry := range entries {
-        output_entry(entry, data_file, dest)
-    }
+		output_entry(entry, data_file, dest)
+	}
 
 	return nil
 }
@@ -58,14 +59,16 @@ func output_entry(entry entry2, src *os.File, out_dir string) error {
 	name := path.Clean(entry.path)
 	dest := path.Join(out_dir, name)
 
+	src.Seek(int64(entry.data_offset), io.SeekStart)
+
 	switch entry.idb_entry_type {
 	case "f":
-		os.MkdirAll(filepath.Dir(dest), 0770);
+		os.MkdirAll(filepath.Dir(dest), 0770)
 		fp, err := os.Create(dest)
 		if err != nil {
 			return err
 		}
-	
+
 		if entry.compressed {
 			fmt.Println("uncompress ", entry.path)
 			exe := exec.Command("uncompress")
@@ -74,7 +77,7 @@ func output_entry(entry entry2, src *os.File, out_dir string) error {
 			exe.Stderr = os.Stderr
 			return exe.Run()
 		}
-	
+
 		_, err = io.CopyN(fp, src, int64(entry.final_size))
 		return err
 	case "d":
